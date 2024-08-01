@@ -19,5 +19,7 @@ class RuTexts:
     enter_amount = "Введите количество"
 
     discord = "Discord"
+    discord_account_price = 1
     twitter = "Twitter"
+    twitter_account_price = 1
 

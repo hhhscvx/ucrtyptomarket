@@ -8,6 +8,7 @@ from config.data import RuTexts
 from config.keyboard_start import start_keyboard
 from routers.buy_account.states import BuyAccount
 from config.data import RuTexts
+from database import insert
 
 
 router = Router(name=__name__)
@@ -53,6 +54,20 @@ def _get_accounts(count: int, accounts: list) -> str:
     return res
 
 
+def _save_order_to_db(callback: CallbackQuery, account_type: str, amount_accounts: int):
+    buyer_tg_id = callback.message.chat.id
+    if account_type == 'discord':
+        total_sum = RuTexts.discord_account_price * amount_accounts
+    elif account_type == 'twitter':
+        total_sum = RuTexts.twitter_account_price * amount_accounts
+    insert(table="orders", column_values={
+        "buyer_tg_id": buyer_tg_id,
+        "account_type": account_type,
+        "amount": amount_accounts,
+        "total_sum": total_sum,
+    })
+
+
 async def _send_accounts(callback: CallbackQuery, accounts: list, amount_accounts: int) -> None:
     if amount_accounts == 1:
         await callback.message.answer(f"Ваш аккаунт готов!\n<code>{accounts[0]}</code>")
@@ -63,16 +78,16 @@ async def _send_accounts(callback: CallbackQuery, accounts: list, amount_account
 async def send_accounts_and_delete_sold(acc_type: str, callback: CallbackQuery, amount_accounts: int):
     match(acc_type):
         case RuTexts.discord:
-            discord_file_path = _get_accounts_path('discord_accounts.txt', '../../config')
-            with open(discord_file_path, 'r') as file:
-                accounts = list(map(lambda string: string.rstrip('\n'), file.readlines()))
-                await _send_accounts(callback=callback, accounts=accounts, amount_accounts=amount_accounts)
-            with open(discord_file_path, 'w') as file:
-                file.writelines(list(map(lambda string: f"{string}\n", accounts[amount_accounts:])))
+            await send_accounts(callback=callback, account_type='discord', amount_accounts=amount_accounts)
         case RuTexts.twitter:
-            twitter_file_path = _get_accounts_path('twitter_accounts.txt', '../../config')
-            with open(twitter_file_path, 'r') as file:
-                accounts = list(map(lambda string: string.rstrip('\n'), file.readlines()))
-                await _send_accounts(callback=callback, accounts=accounts, amount_accounts=amount_accounts)
-            with open(twitter_file_path, 'w') as file:
-                file.writelines(list(map(lambda string: f"{string}\n", accounts[amount_accounts:])))
+            await send_accounts(callback=callback, account_type='twitter', amount_accounts=amount_accounts)
+
+
+async def send_accounts(callback: CallbackQuery, account_type: str, amount_accounts):
+    file_path = _get_accounts_path(f'{account_type}_accounts.txt', '../../config')
+    with open(file_path, 'r') as file:
+        accounts = list(map(lambda string: string.rstrip('\n'), file.readlines()))
+        await _send_accounts(callback=callback, accounts=accounts, amount_accounts=amount_accounts)
+        _save_order_to_db(callback, account_type, amount_accounts)
+    with open(file_path, 'w') as file:
+        file.writelines(list(map(lambda string: f"{string}\n", accounts[amount_accounts:])))
