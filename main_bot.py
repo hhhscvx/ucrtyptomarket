@@ -19,6 +19,5 @@ async def main():
 if __name__ == "__main__":
     load_dotenv()
     BOT_TOKEN = os.getenv("BOT_TOKEN")
-    print(BOT_TOKEN)
     bot = Bot(token=BOT_TOKEN, parse_mode=ParseMode.HTML)
     asyncio.run(main())
