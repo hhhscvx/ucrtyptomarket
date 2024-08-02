@@ -2,6 +2,8 @@ import os
 from aiogram import F, Router
 from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
+from aiogram.exceptions import TelegramBadRequest
+from aiogram.types.input_file import FSInputFile
 
 from .keyboards import PaymentConfig
 from config.data import RuTexts
@@ -54,7 +56,7 @@ def _get_accounts(count: int, accounts: list) -> str:
     return res
 
 
-def _save_order_to_db(callback: CallbackQuery, account_type: str, amount_accounts: int):
+def _save_order_to_db(callback: CallbackQuery, account_type: str, amount_accounts: int, accounts: str):
     buyer_tg_id = callback.message.chat.id
     if account_type == 'discord':
         total_sum = RuTexts.discord_account_price * amount_accounts
@@ -64,15 +66,28 @@ def _save_order_to_db(callback: CallbackQuery, account_type: str, amount_account
         "buyer_tg_id": buyer_tg_id,
         "account_type": account_type,
         "amount": amount_accounts,
+        "accounts": accounts,
         "total_sum": total_sum,
     })
 
 
 async def _send_accounts(callback: CallbackQuery, accounts: list, amount_accounts: int) -> None:
     if amount_accounts == 1:
-        await callback.message.answer(f"Ваш аккаунт готов!\n<code>{accounts[0]}</code>")
+        await callback.message.answer(f"Ваш аккаунт готов!\n\nФормат: почта:пароль:токен"
+                                      f"\n\n<code>{accounts[0]}</code>")
     else:
-        await callback.message.answer(f"Ваши аккаунты готовы!\n<code>{_get_accounts(amount_accounts, accounts)}</code>")
+        try:
+            await callback.message.answer(f"Ваши аккаунты готовы!\n\nФормат: почта:пароль:токен\n\n"
+                                          f"<code>{_get_accounts(amount_accounts, accounts)}</code>")
+        except TelegramBadRequest as error:
+            print(f"Some error: {error}")
+            file_path = f"accounts_{callback.message.chat.id}"
+            with open(file_path, "w") as file:
+                file.writelines(_get_accounts(amount_accounts, accounts))
+            await callback.message.answer_document(FSInputFile(file_path),
+                                                   caption="Ваши аккаунты готовы!\n\nФормат: почта:пароль:токен")
+            with open(file_path, "r") as file:
+                file.__del__()
 
 
 async def send_accounts_and_delete_sold(acc_type: str, callback: CallbackQuery, amount_accounts: int):
@@ -88,6 +103,6 @@ async def send_accounts(callback: CallbackQuery, account_type: str, amount_accou
     with open(file_path, 'r') as file:
         accounts = list(map(lambda string: string.rstrip('\n'), file.readlines()))
         await _send_accounts(callback=callback, accounts=accounts, amount_accounts=amount_accounts)
-        _save_order_to_db(callback, account_type, amount_accounts)
+        _save_order_to_db(callback, account_type, amount_accounts, accounts="\n".join(accounts[:amount_accounts]))
     with open(file_path, 'w') as file:
         file.writelines(list(map(lambda string: f"{string}\n", accounts[amount_accounts:])))

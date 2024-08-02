@@ -16,3 +16,19 @@ def insert(table: str, column_values: dict):
         f"VALUES ({placeholders})",
         values)
     conn.commit()
+
+
+def fetchall(table: str, columns: list[str], condition: str = None) -> list[tuple]:
+    columns_joined = ", ".join(columns)
+    query = f"SELECT {columns_joined} FROM {table}"
+    if condition:
+        query += f" {condition}"
+    cur.execute(query)
+    rows = cur.fetchall()
+    result = []
+    for row in rows:
+        dict_row = {}
+        for index, column in enumerate(columns):
+            dict_row[column] = row[index]
+        result.append(dict_row)
+    return result

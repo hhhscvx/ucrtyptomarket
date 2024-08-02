@@ -14,15 +14,21 @@ class Callbacks:
 
 
 def category_keyboard() -> InlineKeyboardMarkup:
-    btn_discord = InlineKeyboardButton(text=f"{RuTexts.discord} ({_get_count_of_accounts(RuTexts.discord)})",
+    text_discord = _generate_text_for_inline_btn(RuTexts.discord, RuTexts.discord_account_price)
+    btn_discord = InlineKeyboardButton(text=f"{RuTexts.discord} {text_discord}",
                                        callback_data=Callbacks.discord_cb)
-    btn_twitter = InlineKeyboardButton(text=f"{RuTexts.twitter} ({_get_count_of_accounts(RuTexts.twitter)})",
+    text_twitter = _generate_text_for_inline_btn(RuTexts.twitter, RuTexts.twitter_account_price)
+    btn_twitter = InlineKeyboardButton(text=f"{RuTexts.twitter} {text_twitter}",
                                        callback_data=Callbacks.twitter_cb)
 
     keyboard = [[btn_discord],
                 [btn_twitter]]
     markup = InlineKeyboardMarkup(inline_keyboard=keyboard)
     return markup
+
+
+def _generate_text_for_inline_btn(category: str, price: float):
+    return f"({_get_count_of_accounts(category)}) | ${price}"
 
 
 def payment_markup() -> InlineKeyboardMarkup:

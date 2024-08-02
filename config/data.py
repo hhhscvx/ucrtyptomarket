@@ -19,7 +19,15 @@ class RuTexts:
     enter_amount = "Введите количество"
 
     discord = "Discord"
-    discord_account_price = 1
+    discord_account_price = 0.25
     twitter = "Twitter"
-    twitter_account_price = 1
+    twitter_account_price = 0.79
 
+
+# хапхапвх у меня уже был такой метод ну лан)
+def get_accounts_count(category: str, accounts_path: str) -> int:
+    from routers.buy_account.cb_handlers import _get_accounts_path
+    path = _get_accounts_path(f"{category}_accounts.txt", accounts_path)
+    with open(path, 'r') as file:
+        accounts_count = len(file.readlines())
+    return accounts_count
