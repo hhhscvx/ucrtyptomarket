@@ -1,7 +1,6 @@
 import os
-import aiohttp
-import aiohttp.http_exceptions
 from dotenv import load_dotenv
+from aiocryptopay import AioCryptoPay, Networks
 
 from aiogram.types import (InlineKeyboardButton, InlineKeyboardMarkup)
 from config.data import RuTexts
@@ -10,6 +9,8 @@ from config.data import RuTexts
 class PaymentConfig:
     payment_cb = "payment_callback"
     back_to_menu_cb = "back_to_menu"
+    check_payment_crypto = "check_payment_crypto"
+    check_payment_tinkoff = "check_payment_tinkoff"
 
     pay_crypto = "pay_type_crypto"
     pay_card = "pay_type_card"
@@ -37,29 +38,29 @@ def category_keyboard() -> InlineKeyboardMarkup:
 async def payment_type_keyboard(total_sum: float) -> InlineKeyboardMarkup:
     load_dotenv()
     CRYPTO_TOKEN: str = os.getenv("CRYPTO_TOKEN")
+    crypto = AioCryptoPay(token=CRYPTO_TOKEN, network=Networks.MAIN_NET)
 
-    headers = {"Crypto-Pay-API-Token": CRYPTO_TOKEN}
-    async with aiohttp.ClientSession(headers=headers) as client:
-        data = {
-            "asset": "USDT",
-            "amount": str(total_sum),
-            "description": "Buy accounts [ucryptomarket]"
-        }
-        async with client.post("https://pay.crypt.bot/api/createInvoice", json=data) as resp:
-            if resp.status == 200:
-                resp_json = await resp.json()
-                invoice_url = resp_json.get("result").get("pay_url")
+    total_sum = 0.013
+
+    invoice = await crypto.create_invoice(asset='USDT', amount=total_sum)
+    invoice_url = invoice.bot_invoice_url
+    invoice_id = invoice.invoice_id
 
     if not invoice_url:
         raise ValueError("Invoice url not found")
     btn1 = InlineKeyboardButton(text="Криптой",
                                 url=invoice_url)
-    btn2 = InlineKeyboardButton(text="Картой (РУБ)",
+    btn2 = InlineKeyboardButton(text="Проверка оплаты (crypto)",
+                                callback_data=f"invoice_id={invoice_id}") 
+    # ОТПРАВЛЯТЬ В CB_DATA 'invoice_id=my_invoice_id' И ПЕРЕХВАТЫВАТЬ ВСЕ F.data.startswith('invoice'). ТАМ ПРОВЕРЯТЬ И ПРИ САКСЕСЕ ВЫДАВАТЬ АККАУНТЫ Я ГЕНИИИИЙ ПАБЕДА НАХУЙ
+    btn3 = InlineKeyboardButton(text="Картой (РУБ)",
                                 url="https://google.com")  # будет тинькоф
-    btn3 = InlineKeyboardButton(text="Вернуться в меню",
+    btn4 = InlineKeyboardButton(text="Проверка оплаты (картой)",
+                                callback_data=PaymentConfig.check_payment_tinkoff)
+    btn5 = InlineKeyboardButton(text="Вернуться в меню",
                                 callback_data=PaymentConfig.back_to_menu_cb)
 
-    keyboard = [[btn1, btn2, btn3]]
+    keyboard = [[btn1, btn2], [btn3, btn4], [btn5]]
     markup = InlineKeyboardMarkup(inline_keyboard=keyboard)
     return markup
 

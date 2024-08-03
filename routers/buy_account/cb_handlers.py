@@ -4,11 +4,9 @@ import hashlib
 from aiogram import F, Router
 from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
-from aiogram.exceptions import TelegramBadRequest
 from aiogram.types.input_file import FSInputFile
 
 from .keyboards import PaymentConfig, payment_type_keyboard
-from config.data import RuTexts
 from config.keyboard_start import start_keyboard
 from routers.buy_account.states import BuyAccount
 from config.data import RuTexts
@@ -39,7 +37,6 @@ async def success_payment_cb_handler(callback: CallbackQuery, state: FSMContext)
     #     case RuTexts.twitter:
     #         await send_accounts_and_delete_sold(acc_type=RuTexts.twitter, callback=callback, amount_accounts=amount_accounts)
     await callback.message.answer("Выберите тип оплаты", reply_markup=await payment_type_keyboard(total_sum=total))
-    await state.clear()
 
 
 async def _answer_and_get_data(callback: CallbackQuery, state: FSMContext) -> list:
@@ -87,15 +84,6 @@ def _save_order_to_db(callback: CallbackQuery, account_type: str, amount_account
 
 
 async def _send_accounts(callback: CallbackQuery, accounts: list, amount_accounts: int) -> None:
-    # if amount_accounts == 1:
-    #     await callback.message.answer(f"Ваш аккаунт готов!\n\nФормат: почта:пароль:токен"
-    #                                   f"\n\n<code>{accounts[0]}</code>")
-    # else:
-    #     try:
-    #         await callback.message.answer(f"Ваши аккаунты готовы!\n\nФормат: почта:пароль:токен\n\n"
-    #                                       f"<code>{_get_accounts(amount_accounts, accounts)}</code>")
-    #     except TelegramBadRequest as error:
-    #         print(f"Some error: {error}")
     file_path = f"accounts_{callback.message.chat.id}"
     with open(file_path, "w") as file:
         file.writelines(_get_accounts(amount_accounts, accounts))

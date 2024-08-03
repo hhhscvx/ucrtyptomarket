@@ -9,9 +9,9 @@ from database import fetchall
 router = Router(name=__name__)
 
 
-@router.callback_query(F.data)
+@router.callback_query(F.data.startswith("uuid="))
 async def return_order_by_hash(callback: CallbackQuery):
-    uuid = callback.data
+    uuid = callback.data.split("=")[1]
     order = fetchall("orders",
                      ['created', 'account_type', 'amount', 'accounts'],
                      f"WHERE uuid = '{uuid}'")[0]
