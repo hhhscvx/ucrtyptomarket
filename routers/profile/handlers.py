@@ -26,7 +26,7 @@ async def profile_message_handler(message: Message):
 @router.message(F.text == RuTexts.order_history)
 async def profile_message_handler(message: Message):
     condition = f"WHERE buyer_tg_id = {message.from_user.id}"
-    columns = ['account_type', 'amount', 'created']
+    columns = ['account_type', 'amount', 'accounts', 'created', 'uuid']
     orders = fetchall('orders', columns=columns, condition=condition)
     if not orders:
         await message.answer(text="У вас пока нет заказов...")

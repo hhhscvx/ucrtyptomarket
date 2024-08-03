@@ -12,5 +12,6 @@ CREATE TABLE IF NOT EXISTS orders (
     total_sum DECIMAL(10, 2) NOT NULL,
     accounts TEXT NOT NULL,
     created TEXT NOT NULL DEFAULT current_timestamp,
+    uuid TEXT NOT NULL,
     FOREIGN KEY (buyer_tg_id) REFERENCES profile (tg_id)
 );

@@ -20,7 +20,7 @@ async def handle_buy_account_category(message: Message, state: FSMContext):
         return
 
     data = await state.update_data(amount=message.text)
-    await state.set_state(BuyAccount.payment)
+    await state.set_state(BuyAccount.pay_or_leave)
     from ..handlers import send_order
     await send_order(message, data)
 

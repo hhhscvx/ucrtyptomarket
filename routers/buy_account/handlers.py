@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 from .states import BuyAccount
 
 from config.data import RuTexts
-from .keyboards import category_keyboard, payment_markup
+from .keyboards import category_keyboard, make_payment_markup
 from .state_components.category import router as category_router
 from .state_components.amount import router as amount_router
 
@@ -27,9 +27,10 @@ async def send_order(message: Message, data: dict):
     category = data['category']
     price = RuTexts.twitter_account_price if category == RuTexts.twitter else RuTexts.discord_account_price
     amount = data['amount']
+    total = price * float(amount)
     text = (f"<i><b>👀 Ваш заказ:</b></i>\n\n"
             f"Тип аккаунта: <b>{category}</b>\n"
             f"Количество: <code>{amount}</code>\n\n"
-            f"<b>Цена:</b> {price * float(amount)}$")
+            f"<b>Цена:</b> {total}$")
 
-    await message.answer(text=text, reply_markup=payment_markup())
+    await message.answer(text=text, reply_markup=await make_payment_markup())

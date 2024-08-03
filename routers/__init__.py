@@ -9,6 +9,8 @@ from .profile import router as profile_router
 router = Router(name=__name__)
 
 
-router.include_routers(profile_router,
-                       account_router,
+router.include_routers(account_router,
                        commands_router)
+
+# last !
+router.include_router(profile_router)
