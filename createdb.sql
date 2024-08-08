@@ -15,3 +15,12 @@ CREATE TABLE IF NOT EXISTS orders (
     uuid TEXT NOT NULL,
     FOREIGN KEY (buyer_tg_id) REFERENCES profile (tg_id)
 );
+
+CREATE TABLE IF NOT EXISTS replacements (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    buyer_tg_id BIGINT NOT NULL,
+    account_type VARCHAR(64) CHECK (account_type IN ('discord', 'twitter')), -- discord | twitter
+    replacement_accounts TEXT NOT NULL,
+    received_accounts TEXT NOT NULL,
+    FOREIGN KEY (buyer_tg_id) REFERENCES profile (tg_id)
+);

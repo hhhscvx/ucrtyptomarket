@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from aiocryptopay import AioCryptoPay, Networks
 
 from aiogram.types import (InlineKeyboardButton, InlineKeyboardMarkup)
+# from .tinkoff import create_pay_link, check_order_payed
 from config.data import RuTexts
 
 
@@ -22,10 +23,10 @@ class Callbacks:
 
 
 def category_keyboard() -> InlineKeyboardMarkup:
-    text_discord = _generate_text_for_inline_btn(RuTexts.discord, RuTexts.discord_account_price)
+    text_discord = _generate_text_for_inline_btn(RuTexts.discord, RuTexts.discord_account_price_usd)
     btn_discord = InlineKeyboardButton(text=f"{RuTexts.discord} {text_discord}",
                                        callback_data=Callbacks.discord_cb)
-    text_twitter = _generate_text_for_inline_btn(RuTexts.twitter, RuTexts.twitter_account_price)
+    text_twitter = _generate_text_for_inline_btn(RuTexts.twitter, RuTexts.twitter_account_price_usd)
     btn_twitter = InlineKeyboardButton(text=f"{RuTexts.twitter} {text_twitter}",
                                        callback_data=Callbacks.twitter_cb)
 
@@ -35,12 +36,14 @@ def category_keyboard() -> InlineKeyboardMarkup:
     return markup
 
 
-async def payment_type_keyboard(total_sum: float) -> InlineKeyboardMarkup:
+async def payment_type_keyboard(total_sum: float, tg_id: int, desc: str, goods_name: str, goods_count: int) -> InlineKeyboardMarkup:
+    # CRYPTO PAY:
+
     load_dotenv()
     CRYPTO_TOKEN: str = os.getenv("CRYPTO_TOKEN")
     crypto = AioCryptoPay(token=CRYPTO_TOKEN, network=Networks.MAIN_NET)
 
-    total_sum = 0.013
+    total_sum = 0.013  # для теста поставил копеечку, эту строку удалить
 
     invoice = await crypto.create_invoice(asset='USDT', amount=total_sum)
     invoice_url = invoice.bot_invoice_url
@@ -51,17 +54,23 @@ async def payment_type_keyboard(total_sum: float) -> InlineKeyboardMarkup:
     btn1 = InlineKeyboardButton(text="Криптой",
                                 url=invoice_url)
     btn2 = InlineKeyboardButton(text="Проверка оплаты (crypto)",
-                                callback_data=f"invoice_id={invoice_id}") 
-    # ОТПРАВЛЯТЬ В CB_DATA 'invoice_id=my_invoice_id' И ПЕРЕХВАТЫВАТЬ ВСЕ F.data.startswith('invoice'). ТАМ ПРОВЕРЯТЬ И ПРИ САКСЕСЕ ВЫДАВАТЬ АККАУНТЫ Я ГЕНИИИИЙ ПАБЕДА НАХУЙ
+                                callback_data=f"invoice_id={invoice_id}")
+
+    # ТИНЬКОФФ:
+
+    # payment_data = create_pay_link(total_sum * 90, tg_id, desc, goods_name, goods_count)
+    payment_data = ["https://google.com/", "payment_id"]
+
     btn3 = InlineKeyboardButton(text="Картой (РУБ)",
-                                url="https://google.com")  # будет тинькоф
+                                url=payment_data[0])
     btn4 = InlineKeyboardButton(text="Проверка оплаты (картой)",
-                                callback_data=PaymentConfig.check_payment_tinkoff)
+                                callback_data=f"payment_id={payment_data[1]}")
     btn5 = InlineKeyboardButton(text="Вернуться в меню",
                                 callback_data=PaymentConfig.back_to_menu_cb)
 
     keyboard = [[btn1, btn2], [btn3, btn4], [btn5]]
     markup = InlineKeyboardMarkup(inline_keyboard=keyboard)
+    await crypto.close()
     return markup
 
 

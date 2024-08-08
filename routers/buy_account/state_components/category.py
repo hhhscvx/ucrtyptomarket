@@ -15,6 +15,7 @@ categories = {Callbacks.discord_cb: RuTexts.discord,
 
 @router.callback_query(BuyAccount.category, lambda cb: cb.data in categories.keys())
 async def handle_buy_account_category(callback: CallbackQuery, state: FSMContext):
+    await callback.message.delete()
     await callback.answer()
     data = await state.update_data(category=categories[callback.data])
     accounts_count = get_accounts_count(data['category'].lower(), "../../config")

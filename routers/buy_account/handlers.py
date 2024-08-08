@@ -25,7 +25,7 @@ async def categories_message_handler(message: Message, state: FSMContext):
 
 async def send_order(message: Message, data: dict):
     category = data['category']
-    price = RuTexts.twitter_account_price if category == RuTexts.twitter else RuTexts.discord_account_price
+    price = RuTexts.twitter_account_price_usd if category == RuTexts.twitter else RuTexts.discord_account_price_usd
     amount = data['amount']
     total = price * float(amount)
     text = (f"<i><b>👀 Ваш заказ:</b></i>\n\n"

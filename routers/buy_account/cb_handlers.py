@@ -23,20 +23,18 @@ async def back_to_menu_cb_handler(callback: CallbackQuery, state: FSMContext):
     await callback.message.answer(RuTexts.START_MESSAGE, reply_markup=start_keyboard())
 
 
-@router.callback_query(F.data == PaymentConfig.payment_cb)
-@router.message(BuyAccount.pay_or_leave)
+@router.callback_query(BuyAccount.pay_or_leave, F.data == PaymentConfig.payment_cb)
 async def success_payment_cb_handler(callback: CallbackQuery, state: FSMContext):
+    await callback.message.delete()
     await callback.answer()
     data = await state.get_data()
-    price = RuTexts.twitter_account_price if data['category'] == RuTexts.twitter else RuTexts.discord_account_price
+    price = RuTexts.twitter_account_price_usd if data['category'] == RuTexts.twitter else RuTexts.discord_account_price_usd
     total = price * float(data['amount'])
-    # account_category, amount_accounts = await _answer_and_get_data(callback, state)
-    # match(account_category):
-    #     case RuTexts.discord:
-    #         await send_accounts_and_delete_sold(acc_type=RuTexts.discord, callback=callback, amount_accounts=amount_accounts)
-    #     case RuTexts.twitter:
-    #         await send_accounts_and_delete_sold(acc_type=RuTexts.twitter, callback=callback, amount_accounts=amount_accounts)
-    await callback.message.answer("Выберите тип оплаты", reply_markup=await payment_type_keyboard(total_sum=total))
+    user_tg_id = callback.message.chat.id
+    desc = f"Покупка аккаунтов {data['category']} ({data['amount']} шт.) | [ucryptomarket]"
+    await callback.message.answer("Выберите тип оплаты", reply_markup=await payment_type_keyboard(total, user_tg_id,
+                                                                                                  desc, data['category'],
+                                                                                                  data['amount']))
 
 
 async def _answer_and_get_data(callback: CallbackQuery, state: FSMContext) -> list:
@@ -70,9 +68,9 @@ def _generate_unique_id(accounts_type: str) -> str:
 def _save_order_to_db(callback: CallbackQuery, account_type: str, amount_accounts: int, accounts: str):
     buyer_tg_id = callback.message.chat.id
     if account_type == 'discord':
-        total_sum = RuTexts.discord_account_price * amount_accounts
+        total_sum = RuTexts.discord_account_price_usd * amount_accounts
     elif account_type == 'twitter':
-        total_sum = RuTexts.twitter_account_price * amount_accounts
+        total_sum = RuTexts.twitter_account_price_usd * amount_accounts
     insert(table="orders", column_values={
         "buyer_tg_id": buyer_tg_id,
         "account_type": account_type,
@@ -87,6 +85,7 @@ async def _send_accounts(callback: CallbackQuery, accounts: list, amount_account
     file_path = f"accounts_{callback.message.chat.id}"
     with open(file_path, "w") as file:
         file.writelines(_get_accounts(amount_accounts, accounts))
+    await callback.message.delete()
     await callback.message.answer_document(FSInputFile(file_path),
                                            caption="Ваши аккаунты готовы!\n\nФормат: почта:пароль:токен")
     os.remove(file_path)
